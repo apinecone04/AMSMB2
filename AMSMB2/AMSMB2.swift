@@ -57,6 +57,20 @@ public class SMB2Manager: NSObject, NSSecureCoding, Codable, NSCopying, CustomRe
         }
     }
 
+    public typealias SMB2Version = SMB2Client.Version
+
+    open var useSPNEGO: Bool = true {
+        didSet {
+            client?.useSPNEGO = useSPNEGO
+        }
+    }
+
+    open var dialect: SMB2Version = .v2 {
+        didSet {
+            client?.version = dialect
+        }
+    }
+
     override public var debugDescription: String {
         var result = ""
         for (label, value) in customMirror.children {
@@ -1429,6 +1443,8 @@ extension SMB2Manager {
     private func initClient(_ client: SMB2Client, encrypted: Bool) {
         client.securityMode = [.enabled]
         client.authentication = .ntlmSsp
+        client.useSPNEGO = useSPNEGO
+        client.version = dialect
         client.seal = encrypted
 
         client.domain = _domain
