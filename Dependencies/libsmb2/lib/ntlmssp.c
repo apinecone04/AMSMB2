@@ -331,18 +331,11 @@ ntlm_decode_challenge_message(struct smb2_context *smb2, struct auth_data *auth_
                 uint16_t infolen;
                 uint16_t attr_len;
                 uint16_t attr_code;
-                struct smb2_utf16 *utf16_spn = NULL;
                 const uint32_t challenge_header_len = 56;
 
-                /* form destination SPN in case server is checking */
                 free(auth_data->target_info);
-                alloc_len = 32 + strlen(smb2->server);
-                auth_data->target_info = malloc(alloc_len);
-                if (!auth_data->target_info) {
-                        return -1;
-                }
-                auth_data->target_info_len = snprintf((char*)auth_data->target_info,
-                        alloc_len, "cifs/%s", smb2->server);
+                auth_data->target_info = NULL;
+                auth_data->target_info_len = 0;
 
                 free(auth_data->ntlm_buf);
                 auth_data->ntlm_len = len;
@@ -398,25 +391,7 @@ ntlm_decode_challenge_message(struct smb2_context *smb2, struct auth_data *auth_
                                 }
 
                                 if (attr_code == 0) { /* end of list */
-                                        /*  insert target-name */
-                                        if (auth_data->target_info && auth_data->target_info_len) {
-                                                utf16_spn = smb2_utf8_to_utf16((char*)auth_data->target_info);
-                                                if (utf16_spn != NULL) {
-                                                        attr_code = 0x9; /* target-name code */
-                                                        attr_len = utf16_spn->len * 2;
-                                                        u16 = htole16(attr_code);
-                                                        memcpy(&auth_data->ntlm_buf[outoff], &u16, 2);
-                                                        u16 = htole16(attr_len);
-                                                        memcpy(&auth_data->ntlm_buf[outoff + 2], &u16, 2);
-                                                        outoff += 4;
-                                                        memcpy(&auth_data->ntlm_buf[outoff],
-                                                                (uint8_t*)utf16_spn->val, attr_len);
-                                                        outoff += attr_len;
-                                                        infolen += 4 + attr_len;
-                                                        free(utf16_spn);
-                                                }
-                                        }
-                                        /* insert original end of list attr */
+                                        /* insert original end of list attr (do not inject AV 9 target-name) */
                                         u16 = 0;
                                         memcpy(&auth_data->ntlm_buf[outoff], &u16, 2);
                                         memcpy(&auth_data->ntlm_buf[outoff + 2], &u16, 2);
