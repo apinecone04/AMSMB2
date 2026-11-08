@@ -206,13 +206,14 @@ extension SMB2Client {
         }
     }
 
-    var version: Version {
+    var version: SMB2Version {
         get {
-            (try? smb2_get_dialect(context.unwrap())).map { Version(rawValue: UInt32($0)) } ?? .any
+            let dialect = (try? smb2_get_dialect(context.unwrap())) ?? 0
+            return SMB2Version(rawValue: UInt32(dialect)) ?? .any
         }
         set {
             try? withThreadSafeContext { context in
-                smb2_set_version(context, newValue)
+                smb2_set_version(context, newValue.cVersion)
             }
         }
     }
@@ -560,7 +561,7 @@ extension SMB2Client {
         static let required = NegotiateSigning(rawValue: SMB2_NEGOTIATE_SIGNING_REQUIRED)
     }
 
-    typealias Version = smb2_negotiate_version
+    typealias Version = SMB2Version
     typealias Security = smb2_sec
 }
 

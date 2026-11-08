@@ -18,6 +18,8 @@ import System
 import SystemPackage
 #endif
 
+public typealias SMB2Version = SMB2Manager.SMB2Version
+
 /// Implements SMB2 File operations.
 #if canImport(Darwin)
 @objc(AMSMB2Manager)
@@ -57,7 +59,21 @@ public class SMB2Manager: NSObject, NSSecureCoding, Codable, NSCopying, CustomRe
         }
     }
 
-    public typealias SMB2Version = SMB2Client.Version
+    @frozen
+    public enum SMB2Version: UInt32, Sendable {
+        case any = 0
+        case v2 = 2
+        case v3 = 3
+        case v2_02 = 0x0202
+        case v2_10 = 0x0210
+        case v3_00 = 0x0300
+        case v3_02 = 0x0302
+        case v3_11 = 0x0311
+
+        var cVersion: smb2_negotiate_version {
+            smb2_negotiate_version(rawValue)
+        }
+    }
 
     open var useSPNEGO: Bool = true {
         didSet {
